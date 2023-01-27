@@ -9,13 +9,13 @@ class Courier(models.Model):
         return self.name
 
 
-class CouriersIncome(models.Model):
+class CouriersDailyIncome(models.Model):
     courier = models.ForeignKey(Courier, on_delete=models.CASCADE)
     income = models.IntegerField()
     created_at = models.DateTimeField(default=timezone.now)
 
 
-class WeeklyCouriersIncome(models.Model):
+class CouriersWeeklyIncome(models.Model):
     courier = models.ForeignKey(Courier, on_delete=models.CASCADE)
     income = models.BigIntegerField()
     created_at = models.DateTimeField(default=timezone.now)
