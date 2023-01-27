@@ -27,29 +27,49 @@ class TestCouriersIncome(TestCase):
         assert res.status_code == 201
         assert daily_income.income == 2
 
-    def test_when_weekly_income_doesnt_exist(self):
+    def test_add_daily_when_weekly_income_doesnt_exist(self):
         self._add_daily_income("ali", 2)
         daily_income = models.CouriersWeeklyIncome.objects.get(courier__name="ali")
 
         assert daily_income.income == 2
 
     @patch("django.utils.timezone.now")
-    def test_when_weekly_income_already_exists(self, mocked_now: MagicMock):
-        current = timezone.datetime(
+    def test_add_when_weekly_income_already_exists_in_current_week(
+        self, mocked_now: MagicMock
+    ):
+        current_date = timezone.datetime(
             year=2023, month=1, day=27, hour=12, tzinfo=pytz.UTC
         )  # weekday is 7
-        mocked_now.return_value = current
-        yesterday = current - timezone.timedelta(days=1)
+        mocked_now.return_value = current_date
+        yesterday_date = current_date - timezone.timedelta(days=1)
         yesterday_income = 4
         today_income = 2
 
         models.CouriersWeeklyIncome.objects.create(
-            courier=self.courier, income=yesterday_income, created_at=yesterday
+            courier=self.courier, income=yesterday_income, created_at=yesterday_date
         )
         self._add_daily_income("ali", today_income)
         expected_income = yesterday_income + today_income
-        real_income = models.CouriersWeeklyIncome.objects.get(
-            courier__name="ali"
-        ).income
+        real_income = models.CouriersWeeklyIncome.objects.filter(courier__name="ali")
 
-        assert expected_income == real_income
+        assert real_income.count() == 1
+        assert expected_income == real_income.first().income
+
+    @patch("django.utils.timezone.now")
+    def test_add_when_weekly_income_already_exists_out_of_week(
+        self, mocked_now: MagicMock
+    ):
+        current_date = timezone.datetime(
+            year=2023, month=1, day=27, hour=12, tzinfo=pytz.UTC
+        )  # weekday is 7
+        mocked_now.return_value = current_date
+        last_week_date = current_date - timezone.timedelta(days=8)
+        last_week_income = 4
+        today_income = 2
+        models.CouriersWeeklyIncome.objects.create(
+            courier=self.courier, income=last_week_income, created_at=last_week_date
+        )
+        self._add_daily_income("ali", today_income)
+        weekly_incomes = models.CouriersWeeklyIncome.objects.filter(courier__name="ali")
+
+        assert weekly_incomes.count() == 2
