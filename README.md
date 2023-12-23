@@ -1,4 +1,4 @@
-# Sample project using django
+# A sample model of calculating the salary of drivers in online taxies(like Snapp, Tapsi, Miare, ...)
 
 
 # Running:
